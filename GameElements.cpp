@@ -1,4 +1,4 @@
-#include "GameElements.h"
+﻿#include "GameElements.h"
 #include "ConsoleControl.h"
 
 
@@ -8,20 +8,64 @@ void CCHARACTER::draw(char c, int color) {
 	setColor(color);
 	GotoXY(mX, mY);
 	cout << c;
+	GotoXY(mX, mY + 1);
+	cout << c;
 	setColor(15);
+}
+
+void CCHARACTER::Set(int x, int y) {
+	mX = x;
+	mY = y;
+}
+
+void CCHARACTER::eraseLeft() {
+	//Xoa ben trai
+	//Xoa dong tren
+	if (mX != 1)
+		GotoXY(mX - 1, mY);
+	else     //Neu ben trai la canh cua board thi xoa o sat canh phai
+		GotoXY(WIDTH, mY);
+	cout << ' ';
+
+	//Xoa dong duoi
+	if (mX != 1)
+		GotoXY(mX - 1, mY + 1);
+	else     //Neu ben trai la canh cua board thi xoa o sat canh phai
+		GotoXY(WIDTH, mY + 1);
+	cout << ' ';
+}
+
+void CCHARACTER::eraseRight() {
+	//Xoa dong tren
+	if (mX != WIDTH)
+		GotoXY(mX + 1, mY);
+	else  //Neu ben phai la canh cua board thi xoa o sat canh trai 
+		GotoXY(1, mY);
+	cout << ' ';
+
+	//Xoa dong duoi
+	if (mX != WIDTH)
+		GotoXY(mX + 1, mY + 1);
+	else     //Neu ben phai la canh cua board thi xoa o sat canh trai
+		GotoXY(1, mY + 1);
+	cout << ' ';
 }
 
 void CPEOPLE::Up() {
 	if (mY > 1) {		
 		GotoXY(mX, mY);
 		cout << ' ';
+		GotoXY(mX, mY+1);
+		cout << ' ';
 		mY--;
 	}
 }
 
 void CPEOPLE::Down() {
-	if (mY < HEIGHT) {
+	if (mY < HEIGHT - 1) {
 		GotoXY(mX, mY);
+		cout << ' ';
+		GotoXY(mX, mY + 1);
 		cout << ' ';
 		mY++;
 	}		
@@ -31,6 +75,8 @@ void CPEOPLE::Left() {
 	if (mX > 1) {
 		GotoXY(mX, mY);
 		cout << ' ';
+		GotoXY(mX, mY + 1);
+		cout << ' ';
 		mX--;
 	}
 }
@@ -39,13 +85,15 @@ void CPEOPLE::Right() {
 	if (mX < WIDTH) {
 		GotoXY(mX, mY);
 		cout << ' ';
+		GotoXY(mX, mY + 1);
+		cout << ' ';
 		mX++;
 	}
 }
 
 bool CPEOPLE::isImpact(CVEHICLE** ax, int level) {
 	for (int i = 0;i < INIT_CAR + INIT_TRUCK + level*16;i++)
-		if (mX == ax[i]->mX && mY == ax[i]->mY) {
+		if ((mX == ax[i]->mX && mY == ax[i]->mY) || (mX==ax[i]->mX && mY==ax[i]->mY+1) || (mX == ax[i]->mX && mY == ax[i]->mY - 1)) {
 			this->mState = false;
 			delete[] ax;
 			return true;
@@ -56,7 +104,7 @@ bool CPEOPLE::isImpact(CVEHICLE** ax, int level) {
 
 bool CPEOPLE::isImpact(CANIMAL** at, int level) {
 	for (int i = 0;i < INIT_DINO + INIT_BIRD + level*16;i++)
-		if (mX == at[i]->mX && mY == at[i]->mY) {
+		if ((mX == at[i]->mX && mY == at[i]->mY) || (mX == at[i]->mX && mY == at[i]->mY + 1) || (mX == at[i]->mX && mY == at[i]->mY - 1)) {
 			this->mState = false;
 			delete[] at;
 			return true;
@@ -78,7 +126,7 @@ void CGAME::allocThings()
 {
 	int i;
 	
-	an = new CPEOPLE(WIDTH / 2, HEIGHT);
+	an = new CPEOPLE(WIDTH / 2, HEIGHT - 1);
 
 	int nCar, nTruck, nBird, nDino;
 	nCar = INIT_CAR + mlevel * INC_P_LV;
@@ -177,52 +225,52 @@ void CGAME::drawBoard() {
 
 void SmartDraw(CVEHICLE **a, int size) {
 	bool Left;
-	int i = 0, j = size / 4 - 1;
+	int i = 0, j = size / NUM_OF_LANE - 1;
 	Left = a[0]->isLeft();
 	if (Left) {
 		while (i < size) {
 			a[i]->eraseRight();
-			i += size / 4;
+			i += size / NUM_OF_LANE;
 		}
 		while (j < size) {
 			a[j]->draw();
-			j += size / 4;
+			j += size / NUM_OF_LANE;
 		}
 	}
 	else {
 		while (j < size) {
 			a[j]->eraseLeft();
-			j += size / 4;
+			j += size / NUM_OF_LANE;
 		}
 		while (i < size) {
 			a[i]->draw();
-			i += size / 4;
+			i += size / NUM_OF_LANE;
 		}
 	}
 }
 
 void SmartDraw(CANIMAL **a, int size) { //Chi ve va xoa phan tu cuoi + dau, khong xoa tat ca
 	bool Left;
-	int i = 0, j = size / 4 - 1;
+	int i = 0, j = size / NUM_OF_LANE - 1;
 	Left = a[0]->isLeft();
 	if (Left) {
 		while (i < size) {
 			a[i]->eraseRight();
-			i += size / 4;
+			i += size / NUM_OF_LANE;
 		}
 		while (j < size) {
 			a[j]->draw();
-			j += size / 4;
+			j += size / NUM_OF_LANE;
 		}
 	}
 	else {
 		while (j < size) {
 			a[j]->eraseLeft();
-			j += size / 4;
+			j += size / NUM_OF_LANE;
 		}
 		while (i < size) {
 			a[i]->draw();
-			i += size / 4;
+			i += size / NUM_OF_LANE;
 		}
 	}
 }
@@ -236,7 +284,7 @@ void CGAME::drawFull() {
 		axh[i]->draw();
 	for (i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++)
 		ac[i]->draw();
-	for (i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++)
+	for (i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++)
 		akl[i]->draw();
 	an->draw();
 	GotoXY(WIDTH + 11, 10);
@@ -288,10 +336,6 @@ void CGAME::startGame() {
 	resetGame();
 	drawBoard();
 	levelUp();
-	drawFull();
-	GotoXY(0, HEIGHT + 5);
-	for (int i = 0;i < 50;i++)
-		cout << ' ';
 }
 
 void CGAME::exitGame(thread* t) {
@@ -340,7 +384,7 @@ CGAME::~CGAME() {
 	deallocThings();
 }
 
-void CGAME::levelUp() {
+void CGAME::levelUp(bool isDraw) {
 	deallocThings();
 	mlevel++;
 	allocThings();
@@ -355,6 +399,13 @@ void CGAME::levelUp() {
 	} while (rBird == rCar || rBird == rTruck);
 	rDino = 6 - rCar - rBird - rTruck;
 
+	//Cách thưa các làn xe
+	rDino *= DISTANCE_LANE;
+	rCar *= DISTANCE_LANE;
+	rBird *= DISTANCE_LANE;
+	rTruck *= DISTANCE_LANE;
+
+	//Cách so với lề trên
 	rDino += 2;
 	rCar += 2;
 	rBird += 2;
@@ -364,37 +415,90 @@ void CGAME::levelUp() {
 	int x, y;
 	//set Dino pos
 	x = rand() % WIDTH + 1;
-	for (int i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++) {		
-		akl[i]->Set(x--, rDino + 4*(i*4/(INIT_DINO + mlevel * INC_P_LV)));
+	akl[0]->Set(x, rDino);
+	x = rand() % WIDTH + 1;
+	ac[0]->Set(x, rBird);
+	x = rand() % WIDTH + 1;
+	axt[0]->Set(x, rTruck);
+	x = rand() % WIDTH + 1;
+	axh[0]->Set(x, rCar);
+
+	setPosDir();
+
+	if(isDraw)
+		drawFull();
+}
+
+void CGAME::setPosDir() {
+	//set data
+	int x, y;
+	akl[0]->get(x, y);
+	//Cái đống trong ngoặc: (i*NUM_OF_LANE/(INIT_...) là dòng thứ k của loài đó
+	for (int i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++) {
+		akl[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_DINO + mlevel * INC_P_LV)));
 		if (x < 1)
 			x = WIDTH;
-		akl[i]->setDir((rDino + 4 * (i * 4 / (INIT_DINO + mlevel * INC_P_LV))) % 2);
+		akl[i]->setDir();
 	}
 
 	//set Bird, truck, car pos
-	x = rand() % WIDTH + 1;
+	ac[0]->get(x, y);
 	for (int i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++) {
-		ac[i]->Set(x--, rBird + 4*(i * 4 / (INIT_BIRD + mlevel * INC_P_LV)));
+		ac[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_BIRD + mlevel * INC_P_LV)));
 		if (x < 1)
 			x = WIDTH;
-		ac[i]->setDir((rBird + 4 * (i * 4 / (INIT_BIRD + mlevel * INC_P_LV))) % 2);
+		ac[i]->setDir();		
 	}
 
-	x = rand() % WIDTH + 1;
+	axh[0]->get(x, y);
 	for (int i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++) {
-		axh[i]->Set(x--, rCar + 4*(i * 4 / (INIT_CAR + mlevel * INC_P_LV)));
+		axh[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_CAR + mlevel * INC_P_LV)));
 		if (x < 1)
 			x = WIDTH;
-		axh[i]->setDir((rCar + 4 * (i * 4 / (INIT_CAR + mlevel * INC_P_LV))) % 2);
+		axh[i]->setDir();		
 	}
 
-	x = rand() % WIDTH + 1;
+	axt[0]->get(x, y);
 	for (int i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++) {
-		axt[i]->Set(x--, rTruck + 4*(i * 4 / (INIT_TRUCK + mlevel * INC_P_LV)));
+		axt[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV)));
 		if (x < 1)
 			x = WIDTH;
-		axt[i]->setDir((rTruck + 4 * (i * 4 / (INIT_TRUCK + mlevel * INC_P_LV))) % 2);
+		axt[i]->setDir();		
 	}
-
-	drawFull();
 }
+
+
+//
+//for (int i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++) {		
+//	akl[i]->Set(x--, rDino + NUM_OF_OBJ*(i * NUM_OF_LANE/(INIT_DINO + mlevel * INC_P_LV))); 
+//	if (x < 1)
+//		x = WIDTH;
+//	akl[i]->setDir();
+//	//akl[i]->setDir((rDino + NUM_OF_OBJ * (i * NUM_OF_LANE / (INIT_DINO + mlevel * INC_P_LV))) % 2);
+//}
+////set Bird, truck, car pos
+//x = rand() % WIDTH + 1;
+//for (int i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++) {
+//	ac[i]->Set(x--, rBird + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_BIRD + mlevel * INC_P_LV)));
+//	if (x < 1)
+//		x = WIDTH;
+//	ac[i]->setDir();
+//	//ac[i]->setDir((rBird + NUM_OF_OBJ * (i * NUM_OF_LANE / (INIT_BIRD + mlevel * INC_P_LV))) % 2);
+//}
+//x = rand() % WIDTH + 1;
+//for (int i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++) {
+//	axh[i]->Set(x--, rCar + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_CAR + mlevel * INC_P_LV)));
+//	if (x < 1)
+//		x = WIDTH;
+//	axh[i]->setDir();
+//	//axh[i]->setDir((rCar + NUM_OF_OBJ * (i * NUM_OF_LANE / (INIT_CAR + mlevel * INC_P_LV))) % 2);
+//}
+//x = rand() % WIDTH + 1;
+//for (int i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++) {
+//	axt[i]->Set(x--, rTruck + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV)));
+//	if (x < 1)
+//		x = WIDTH;
+//	axt[i]->setDir();
+//	//axt[i]->setDir((rTruck + NUM_OF_OBJ * (i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV))) % 2);
+//}
+

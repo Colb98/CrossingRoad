@@ -12,9 +12,12 @@
 #define INIT_DINO 100
 #define MAX_LEVEL 3
 #define WIDTH 85
-#define HEIGHT 20
+#define HEIGHT 26
 #define BASE_SPD 100
 #define INC_P_LV 16
+#define DISTANCE_LANE 3
+#define NUM_OF_LANE 2
+#define NUM_OF_OBJ 4*DISTANCE_LANE
 
 using namespace std;
 
@@ -25,20 +28,20 @@ protected:
 public:
 	CCHARACTER(int x, int y) : mX(x), mY(y) {}
 	void draw(char, int);
-	void eraseLeft() {   //Xoa ben trai
-		if (mX != 1)
-			GotoXY(mX - 1, mY);
-		else     //Neu ben trai la canh cua board thi xoa o sat canh phai
-			GotoXY(WIDTH, mY);
-		cout << ' ';
+
+	void Set(int x, int y);
+
+	void get(int &x, int &y) const {
+		x = mX;
+		y = mY;
 	}
-	void eraseRight() {
-		if (mX != WIDTH)
-			GotoXY(mX + 1, mY);
-		else  //Neu ben phai la canh cua board thi xoa o sat canh trai 
-			GotoXY(1, mY);
-		cout << ' ';
-	}
+
+	void eraseLeft();
+
+	void eraseRight();
+
+	friend ostream& operator<<(ostream&, const CCHARACTER&);
+	friend istream& operator >> (istream&, CCHARACTER&);
 };
 
 
@@ -48,10 +51,12 @@ protected:
 public:
 	CVEHICLE() : CCHARACTER(0, 0) {}
 	CVEHICLE(int x, int y) : CCHARACTER(x,y) {}
-	virtual void Set(int, int) = 0;
 	virtual void Move() = 0;
 	void setDir(bool l) {
 		Left = l;
+	}
+	void setDir() {
+		setDir(mY % 2);
 	}
 	bool isLeft() {
 		return Left;
@@ -68,10 +73,6 @@ class CTRUCK : public CVEHICLE {
 public:
 	CTRUCK(int x, int y) : CVEHICLE(x, y) {}
 	CTRUCK() : CVEHICLE(0, 0) {}
-	void Set(int x, int y) {
-		mX = x;
-		mY = y;
-	}
 	void Move() {
 		int d = 1;
 		if (Left)
@@ -91,10 +92,6 @@ class CCAR : public CVEHICLE {
 public:
 	CCAR(int x, int y) : CVEHICLE(x, y) {}
 	CCAR() : CVEHICLE(0, 0) {}
-	void Set(int x, int y) {
-		mX = x;
-		mY = y;
-	}
 	void Move() {
 		int d = 1;
 		if (Left)
@@ -116,7 +113,6 @@ protected:
 public:
 	CANIMAL() : CCHARACTER(0,0) {}
 	CANIMAL(int x, int y) : CCHARACTER(x,y) {}
-	virtual void Set(int, int) = 0;
 	virtual void Cry() = 0;
 	virtual void Move() = 0;
 	bool isLeft() {
@@ -124,6 +120,9 @@ public:
 	}
 	void setDir(bool l) {
 		Left = l;
+	}
+	void setDir() {
+		setDir(mY % 2);
 	}
 	friend class CPEOPLE;
 	virtual void draw() = 0;
@@ -136,10 +135,6 @@ class CDINOSAUR : public CANIMAL {
 public:
 	CDINOSAUR(int x, int y) : CANIMAL(x, y) {}
 	CDINOSAUR() : CANIMAL(0, 0) {}
-	void Set(int x, int y) {
-		mX = x;
-		mY = y;
-	}
 	void Move() {
 		int d = 1;
 		if (Left)
@@ -160,10 +155,6 @@ class CBIRD :public CANIMAL {
 public:
 	CBIRD(int x, int y) : CANIMAL(x, y) {}
 	CBIRD() : CANIMAL(0, 0) {}
-	void Set(int x, int y) {
-		mX = x;
-		mY = y;
-	}
 	void Move() {
 		int d = 1;
 		if (Left)
@@ -180,7 +171,7 @@ public:
 	}
 };
 
-class CPEOPLE : protected CCHARACTER {
+class CPEOPLE : public CCHARACTER {
 	bool mState = true;
 public:
 	CPEOPLE() : CCHARACTER(0, 0) {}
@@ -208,7 +199,7 @@ class CGAME {
 public:
 	bool IsRunning = true;
 	CGAME(); //Khoi tao du lieu cac doi tuong
-	void levelUp();
+	void levelUp(bool isDraw = true);
 	int level() { return mlevel; }
 	void drawBoard(); //Ve khung
 	void drawGame(); //Ve tro choi
@@ -220,11 +211,14 @@ public:
 	CANIMAL** getAnimal(); //Lay danh sach thu
 	void allocThings();
 	void deallocThings();
+	void setPosDir();
 	void resetGame(); //Reset
 	void exitGame(thread*); //Thoat thread
 	void startGame(); //Start
-	void loadGame(istream); //Load game
-	void saveGame(ostream); //Save game
+	bool loadGame(istream&); //Load game
+	bool saveGame(ostream&); //Save game
+	void resetSave(ostream&); //Fix save
+	bool legalSave(); //test file Save
 	void pauseGame(HANDLE); //Pause thread
 	void resumeGame(HANDLE); //Resume thread
 	void updatePosPeople(char);//Dieu khien CPEOPLE de di chuyen
