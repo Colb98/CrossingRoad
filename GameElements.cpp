@@ -4,122 +4,15 @@
 
 
 
-void CCHARACTER::draw(char c, int color) {
-	setColor(color);
-	GotoXY(mX, mY);
-	cout << c;
-	GotoXY(mX, mY + 1);
-	cout << c;
-	setColor(15);
-}
+
 
 void CCHARACTER::Set(int x, int y) {
 	mX = x;
 	mY = y;
 }
 
-void CCHARACTER::eraseLeft() {
-	//Xoa ben trai
-	//Xoa dong tren
-	if (mX != 1)
-		GotoXY(mX - 1, mY);
-	else     //Neu ben trai la canh cua board thi xoa o sat canh phai
-		GotoXY(WIDTH, mY);
-	cout << ' ';
 
-	//Xoa dong duoi
-	if (mX != 1)
-		GotoXY(mX - 1, mY + 1);
-	else     //Neu ben trai la canh cua board thi xoa o sat canh phai
-		GotoXY(WIDTH, mY + 1);
-	cout << ' ';
-}
 
-void CCHARACTER::eraseRight() {
-	//Xoa dong tren
-	if (mX != WIDTH)
-		GotoXY(mX + 1, mY);
-	else  //Neu ben phai la canh cua board thi xoa o sat canh trai 
-		GotoXY(1, mY);
-	cout << ' ';
-
-	//Xoa dong duoi
-	if (mX != WIDTH)
-		GotoXY(mX + 1, mY + 1);
-	else     //Neu ben phai la canh cua board thi xoa o sat canh trai
-		GotoXY(1, mY + 1);
-	cout << ' ';
-}
-
-void CPEOPLE::Up() {
-	if (mY > 1) {		
-		GotoXY(mX, mY);
-		cout << ' ';
-		GotoXY(mX, mY+1);
-		cout << ' ';
-		mY--;
-	}
-}
-
-void CPEOPLE::Down() {
-	if (mY < HEIGHT - 1) {
-		GotoXY(mX, mY);
-		cout << ' ';
-		GotoXY(mX, mY + 1);
-		cout << ' ';
-		mY++;
-	}		
-}
-
-void CPEOPLE::Left() {
-	if (mX > 1) {
-		GotoXY(mX, mY);
-		cout << ' ';
-		GotoXY(mX, mY + 1);
-		cout << ' ';
-		mX--;
-	}
-}
-
-void CPEOPLE::Right() {
-	if (mX < WIDTH) {
-		GotoXY(mX, mY);
-		cout << ' ';
-		GotoXY(mX, mY + 1);
-		cout << ' ';
-		mX++;
-	}
-}
-
-bool CPEOPLE::isImpact(CVEHICLE** ax, int level) {
-	for (int i = 0;i < INIT_CAR + INIT_TRUCK + level*16;i++)
-		if ((mX == ax[i]->mX && mY == ax[i]->mY) || (mX==ax[i]->mX && mY==ax[i]->mY+1) || (mX == ax[i]->mX && mY == ax[i]->mY - 1)) {
-			this->mState = false;
-			delete[] ax;
-			return true;
-		}
-	delete[] ax;
-	return false;
-}
-
-bool CPEOPLE::isImpact(CANIMAL** at, int level) {
-	for (int i = 0;i < INIT_DINO + INIT_BIRD + level*16;i++)
-		if ((mX == at[i]->mX && mY == at[i]->mY) || (mX == at[i]->mX && mY == at[i]->mY + 1) || (mX == at[i]->mX && mY == at[i]->mY - 1)) {
-			this->mState = false;
-			delete[] at;
-			return true;
-		}
-	delete[] at;
-	return false;
-}
-
-bool CPEOPLE::isFinish() {
-	return (mY == 1);
-}
-
-bool CPEOPLE::isDead() {
-	return !mState;
-}
 
 
 void CGAME::allocThings()
@@ -134,7 +27,7 @@ void CGAME::allocThings()
 	nBird = INIT_BIRD + mlevel * INC_P_LV;
 	nDino = INIT_DINO + mlevel * INC_P_LV;
 
-
+	//Tạo mảng xe trừu tượng -> lưu vào xe tải và xe hơi 
 	CVEHICLE **ax = new CVEHICLE*[nCar + nTruck];
 	axt = new CVEHICLE*[nTruck];
 	axh = new CVEHICLE*[nCar];
@@ -154,12 +47,19 @@ void CGAME::allocThings()
 
 	delete[] at;
 	delete[] ax;
+
+	//INIT TRAFIC LIGHTS
+	al = new CLIGHT[NUM_OF_LANE*2];
 }
 
 void CGAME::deallocThings()
 {
+	if (al)
+		delete[] al;
+
 	if(an)
 		delete an;
+
 	if (akl) {
 		for (int i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++)
 			delete akl[i];
@@ -182,6 +82,7 @@ void CGAME::deallocThings()
 		delete[] ac;
 	}	
 	an = NULL;
+	al = NULL;
 	akl = ac = NULL;
 	axh = axt = NULL;
 }
@@ -223,89 +124,123 @@ void CGAME::drawBoard() {
 }
 
 
-void SmartDraw(CVEHICLE **a, int size) {
-	bool Left;
-	int i = 0, j = size / NUM_OF_LANE - 1;
-	Left = a[0]->isLeft();
-	if (Left) {
-		while (i < size) {
-			a[i]->eraseRight();
-			i += size / NUM_OF_LANE;
-		}
-		while (j < size) {
-			a[j]->draw();
-			j += size / NUM_OF_LANE;
-		}
-	}
-	else {
-		while (j < size) {
-			a[j]->eraseLeft();
-			j += size / NUM_OF_LANE;
-		}
-		while (i < size) {
-			a[i]->draw();
-			i += size / NUM_OF_LANE;
-		}
-	}
-}
-
-void SmartDraw(CANIMAL **a, int size) { //Chi ve va xoa phan tu cuoi + dau, khong xoa tat ca
-	bool Left;
-	int i = 0, j = size / NUM_OF_LANE - 1;
-	Left = a[0]->isLeft();
-	if (Left) {
-		while (i < size) {
-			a[i]->eraseRight();
-			i += size / NUM_OF_LANE;
-		}
-		while (j < size) {
-			a[j]->draw();
-			j += size / NUM_OF_LANE;
-		}
-	}
-	else {
-		while (j < size) {
-			a[j]->eraseLeft();
-			j += size / NUM_OF_LANE;
-		}
-		while (i < size) {
-			a[i]->draw();
-			i += size / NUM_OF_LANE;
-		}
-	}
-}
+//void SmartDraw(CVEHICLE **a, int size) {
+//	bool Left;
+//	int i = 0, j = size / NUM_OF_LANE - 1;
+//	Left = a[0]->isLeft();
+//	if (Left) {
+//		while (i < size) {
+//			//a[i]->eraseRight();
+//			i += size / NUM_OF_LANE;
+//		}
+//		while (j < size) {
+//			a[j]->draw();
+//			j += size / NUM_OF_LANE;
+//		}
+//	}
+//	else {
+//		while (j < size) {
+//			//a[j]->eraseLeft();
+//			j += size / NUM_OF_LANE;
+//		}
+//		while (i < size) {
+//			a[i]->draw();
+//			i += size / NUM_OF_LANE;
+//		}
+//	}
+//}
+//
+//void SmartDraw(CANIMAL **a, int size) { //Chi ve va xoa phan tu cuoi + dau, khong xoa tat ca
+//	bool Left;
+//	int i = 0, j = size / NUM_OF_LANE - 1;
+//	Left = a[0]->isLeft();
+//	if (Left) {
+//		while (i < size) {
+//			//a[i]->eraseRight();
+//			i += size / NUM_OF_LANE;
+//		}
+//		while (j < size) {
+//			a[j]->draw();
+//			j += size / NUM_OF_LANE;
+//		}
+//	}
+//	else {
+//		while (j < size) {
+//			//a[j]->eraseLeft();
+//			j += size / NUM_OF_LANE;
+//		}
+//		while (i < size) {
+//			a[i]->draw();
+//			i += size / NUM_OF_LANE;
+//		}
+//	}
+//}
 
 void CGAME::drawFull() {
 	int i;
 	clearScr();
+	drawBoard();
+
+	setColor(6);
 	for (i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++)
 		axt[i]->draw();
+
+	setColor(7);
 	for (i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++)
 		axh[i]->draw();
+
+	setColor(9);
 	for (i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++)
 		ac[i]->draw();
+
+	setColor(2);
 	for (i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++)
 		akl[i]->draw();
+
+	setColor(15);
 	an->draw();
 	GotoXY(WIDTH + 11, 10);
 	cout << mlevel;
 }
 
 void CGAME::drawGame() {	
-	SmartDraw(axt, INIT_TRUCK + mlevel * INC_P_LV);
-	SmartDraw(axh, INIT_CAR + mlevel * INC_P_LV);
-	SmartDraw(akl, INIT_DINO + mlevel * INC_P_LV);
-	SmartDraw(ac, INIT_BIRD + mlevel * INC_P_LV);
-	an->draw();
+	//SmartDraw(axt, INIT_TRUCK + mlevel * INC_P_LV);
+	//SmartDraw(axh, INIT_CAR + mlevel * INC_P_LV);
+	//SmartDraw(akl, INIT_DINO + mlevel * INC_P_LV);
+	//SmartDraw(ac, INIT_BIRD + mlevel * INC_P_LV);
+	int i;
+	setColor(6);
+	for (i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++)
+		axt[i]->draw();
+	
+	setColor(7);
+	for (i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++)
+		axh[i]->draw();
+
+	setColor(9);
+	for (i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++)
+		ac[i]->draw();
+
+	setColor(2);
+	for (i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++)
+		akl[i]->draw();
+	drawLight();
+	//an->draw();
+}
+
+void CGAME::drawLight() {
+	for (int i = 0;i < NUM_OF_LANE * 2;i++)
+		al[i].draw();
 }
 
 void CGAME::clearScr() {
-	int i, j;
-	for (i = 1;i <= HEIGHT;i++) {
-		GotoXY(1, i);
-		for (j = 0; j < WIDTH;j++)
-			cout << ' ';
-	}
+	//int i, j;
+	//for (i = 1;i <= HEIGHT;i++) {
+	//	GotoXY(1, i);
+	//	for (j = 0; j < WIDTH;j++)
+	//		cout << ' ';
+	//}
+	ClearScreen();
 }
 
 CPEOPLE* CGAME::getPeople() {
@@ -359,16 +294,24 @@ void CGAME::updatePosPeople(char c)
 	case 'S': an->Down(); break;
 	case 'A': an->Left(); break;
 	case 'D': an->Right(); break;
+	default: return;
 	}
+	an->draw();
 }
 
 void CGAME::updatePosVehicle()
 {
 	int i;
-	for (i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++)
-		axt[i]->Move();
 	for (i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++)
-		axh[i]->Move();
+		if (al[i / ((INIT_CAR + mlevel * INC_P_LV) / NUM_OF_LANE)].isGreen())
+			axh[i]->Move();
+
+	for (i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++)
+		if (al[2 + i / ((INIT_TRUCK + mlevel * INC_P_LV) / NUM_OF_LANE)].isGreen())
+			axt[i]->Move();
+
+	for (int i = 0;i < NUM_OF_LANE * 2;i++)
+		al[i].countDown();
 }
 
 void CGAME::updatePosAnimal()
@@ -413,14 +356,14 @@ void CGAME::levelUp(bool isDraw) {
 
 
 	int x, y;
-	//set Dino pos
-	x = rand() % WIDTH + 1;
+	//random hoành độ, cách xa biên
+	x = rand() % (WIDTH - 12) + 7;
 	akl[0]->Set(x, rDino);
-	x = rand() % WIDTH + 1;
+	x = rand() % (WIDTH - 12) + 7;
 	ac[0]->Set(x, rBird);
-	x = rand() % WIDTH + 1;
+	x = rand() % (WIDTH - 12) + 7;
 	axt[0]->Set(x, rTruck);
-	x = rand() % WIDTH + 1;
+	x = rand() % (WIDTH - 12) + 7;
 	axh[0]->Set(x, rCar);
 
 	setPosDir();
@@ -432,38 +375,71 @@ void CGAME::levelUp(bool isDraw) {
 void CGAME::setPosDir() {
 	//set data
 	int x, y;
+	int xx;
+	int distance; //Khoảng cách giữa các xe, thú
+	distance = WIDTH / ((INIT_DINO + mlevel*INC_P_LV)/2) - 2;
 	akl[0]->get(x, y);
 	//Cái đống trong ngoặc: (i*NUM_OF_LANE/(INIT_...) là dòng thứ k của loài đó
 	for (int i = 0;i < INIT_DINO + mlevel * INC_P_LV;i++) {
-		akl[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_DINO + mlevel * INC_P_LV)));
-		if (x < 1)
-			x = WIDTH;
+		if (x < 4)
+			x = WIDTH - 4 - 1 - (4 - x);
+		akl[i]->Set(x, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_DINO + mlevel * INC_P_LV)));
+
 		akl[i]->setDir();
+		x -= distance;
 	}
 
 	//set Bird, truck, car pos
 	ac[0]->get(x, y);
 	for (int i = 0;i < INIT_BIRD + mlevel * INC_P_LV;i++) {
-		ac[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_BIRD + mlevel * INC_P_LV)));
-		if (x < 1)
-			x = WIDTH;
-		ac[i]->setDir();		
+		if (x < 4)
+			x = WIDTH - 4 - 1 - (4 - x);
+		ac[i]->Set(x, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_BIRD + mlevel * INC_P_LV)));
+
+		ac[i]->setDir();	
+		x -= distance;
 	}
 
-	axh[0]->get(x, y);
+	//đối với xe tải và xe hơi, lấy thêm vị trí hàng để đặt đèn xanh đỏ
+	axh[0]->get(x, y);	
 	for (int i = 0;i < INIT_CAR + mlevel * INC_P_LV;i++) {
-		axh[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_CAR + mlevel * INC_P_LV)));
-		if (x < 1)
-			x = WIDTH;
-		axh[i]->setDir();		
+		if (x < 4)
+			x = WIDTH - 4 - 1 - (4 - x);
+		axh[i]->Set(x, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_CAR + mlevel * INC_P_LV)));
+
+		axh[i]->setDir();	
+		x -= distance;
 	}
+
+	//Trafic light
+	srand(time(NULL));
+	for (int i = 0; i < NUM_OF_LANE; i++) {		
+		if (axh[0]->isLeft()) 
+			xx = 1;
+		else
+			xx = WIDTH;
+		al[i].set(xx, y + NUM_OF_OBJ*i);
+	}
+
 
 	axt[0]->get(x, y);
 	for (int i = 0;i < INIT_TRUCK + mlevel * INC_P_LV;i++) {
-		axt[i]->Set(x--, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV)));
-		if (x < 1)
-			x = WIDTH;
-		axt[i]->setDir();		
+		if (x < 4)
+			x = WIDTH - 4 - 1 - (4 - x);
+		axt[i]->Set(x, y + NUM_OF_OBJ*(i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV)));
+
+		axt[i]->setDir();	
+		x -= distance;
+	}
+	
+	//Trafic light
+	srand(time(NULL));
+	for (int i = 0; i < NUM_OF_LANE; i++) {
+		if (axt[0]->isLeft())
+			xx = 1;
+		else
+			xx = WIDTH;
+		al[i + NUM_OF_LANE].set(xx, y + NUM_OF_OBJ*i);
 	}
 }
 
@@ -501,4 +477,3 @@ void CGAME::setPosDir() {
 //	axt[i]->setDir();
 //	//axt[i]->setDir((rTruck + NUM_OF_OBJ * (i * NUM_OF_LANE / (INIT_TRUCK + mlevel * INC_P_LV))) % 2);
 //}
-

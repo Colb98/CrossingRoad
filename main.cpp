@@ -7,14 +7,42 @@
 #include "GameElements.h"
 
 #define MID_POS 50
+#define CHEAT_CODE "BUULOCDEPTRAI"
 
 void SubThread();
 int Menu();
 int PauseMenu();
 void writeOption(string s, int pos, bool isChosen);
+void writeOption(string s, int pos, int color);
 
 char MOVING;
 CGAME *cg;
+//Cheat mode sign
+bool cheat_mode = false;
+//To know when cheat mode is change
+bool cheat_toggle = false;
+
+//Testing main
+//int main() {
+//	CCAR a(5, 5);
+//	CBIRD b(7, 8);
+//	a.setDir(false);
+//	while (!_kbhit()) {
+//		a.Move();
+//		a.draw();
+//		b.Move();
+//		b.draw();
+//		
+//		GotoXY(7, 5);
+//		cout << 'Y';
+//		GotoXY(0, 0);
+//		cout << a.isHit(7, 5);
+//
+//		cout << endl << b.isHit(7, 5);
+//		Sleep(100);
+//	}
+//	return 0;
+//}
 
 int main() {
 	cg = new CGAME();
@@ -27,18 +55,34 @@ int main() {
 		delete cg;
 		return 0;
 	}
-	if(choice == 0)
+	if (choice == 0)
 		cg->startGame();
+	else if (choice == 1) {
+		cg->drawBoard();
+		cg->drawFull();
+	}
 
 	thread t1(SubThread);
 	while (1) {
 		temp = toupper(_getch());
+		/*if (temp != 27 && temp != 'P' && temp != 'A' && temp != 'S' && temp != 'D' && temp != 'W')
+			continue;*/
 		if (!cg->getPeople()->isDead()) {			
-			if (temp == 27 || temp == 'P') {
+			if (temp == CHEAT_CODE[0]) {
+				int i = 1, n = strlen(CHEAT_CODE);
+				while (i < n && (temp = toupper(_getch())) == CHEAT_CODE[i])
+					i++;
+				if (i == n) {
+					cheat_mode = !cheat_mode;
+					cheat_toggle = true;
+				}
+				
+			}
+			else if (temp == 27 || temp == 'P') {
 				cg->pauseGame(t1.native_handle());
 				choice = PauseMenu();
 				cg->resumeGame((HANDLE)t1.native_handle());
-				if (choice <= 3) {
+				if (choice <= 2) {
 					cg->drawFull();					
 				}
 				else {
@@ -81,10 +125,23 @@ void SubThread() {
 		if (!cg->getPeople()->isDead()) {
 			cg->updatePosPeople(MOVING);
 		}
+
+		if (cheat_toggle) {
+			GotoXY(0, HEIGHT + 3);
+			cout << "                                ";
+			GotoXY(0, HEIGHT + 3);
+			if (cheat_mode)
+				cout << "You unlocked cheat mode!!";
+			else
+				cout << "You turned off cheat mode";
+			cheat_toggle = false;
+		}
+
 		MOVING = ' ';
 		cg->updatePosVehicle();
 		cg->updatePosAnimal();
 		cg->drawGame();
+		if(!cheat_mode)
 		if (cg->getPeople()->isImpact(cg->getVehicle(),cg->level()) || cg->getPeople()->isImpact(cg->getAnimal(),cg->level()))
 		{			
 			//Xu li khi va cham (thoat ra, hien chu blah blah)
@@ -97,8 +154,12 @@ void SubThread() {
 			cg->clearScr();
 			if (cg->level() < MAX_LEVEL)
 				cg->levelUp();
-			else 
+			else {
+				GotoXY(WIDTH / 2 - 36 / 2, HEIGHT / 2);
+				cout << "Congratulation!!! You passed all 5 levels. Game will restart in 3 sec";
+				Sleep(3000);
 				cg->startGame();
+			}
 					
 			Sleep(500);
 		}
@@ -115,108 +176,79 @@ int Menu() {
 	for (int i = 0;i < numOChoice;i++)
 		writeOption(selection[i], i + 1, chosen == i);
 
-	while((key=toupper(_getch()))!=13 || (chosen == 2)) {
-		if (key == 'W') {
-			chosen -= 1;
-			if (chosen < 0)
-				chosen = numOChoice - 1;
-		}
-		else if (key == 'S') {
-			chosen += 1;
-			if (chosen == numOChoice)
-				chosen = 0;
-		}
-		else continue;
-		for (int i = 0;i < numOChoice;i++)
-			writeOption(selection[i], i + 1, chosen == i);
-		
-	} 
-	
-	//choose load file
-	if (chosen == 1) {
-		cg->clearScr();
-		int chosen1 = 0;
-		vector<string> load = { "Save slot 1", "Save slot 2","Save slot 3","Back"};
-		int numOfChoice = load.size();
-		for (int i = 0;i < numOfChoice;i++)
-			writeOption(load[i], i + 1, chosen1 == i);
+	writeOption("Start a new game at once", numOChoice + 1, 13);
 
+	do {
 		while ((key = toupper(_getch())) != 13) {
+			writeOption("                              ", numOChoice + 1, 13);
+			
 			if (key == 'W') {
-				chosen1 -= 1;
-				if (chosen1 < 0)
-					chosen1 = numOChoice - 1;
+				chosen -= 1;
+				if (chosen < 0)
+					chosen = numOChoice - 1;
 			}
-			else if (key == 'S') {
-				chosen1 += 1;
-				if (chosen1 == numOChoice)
-					chosen1 = 0;
+			else if (key == 'S') {				
+				chosen += 1;
+				if (chosen == numOChoice)
+					chosen = 0;
 			}
 			else continue;
 			for (int i = 0;i < numOChoice;i++)
-				writeOption(load[i], i + 1, chosen1 == i);
-
+				writeOption(selection[i], i + 1, chosen == i);
+			
+			switch (chosen) {
+			case 0: writeOption("Start a new game at once", numOChoice + 1, 13); break;
+			case 1: writeOption("Load a saved game", numOChoice + 1, 13); break;
+			case 2: writeOption("Ooops... Nothing's here", numOChoice + 1, 13); break;
+			case 3: writeOption("Quit the game", numOChoice + 1, 13); break;
+			}
 		}
-		if (chosen1 == 3) 
-			return Menu(); // Quay lai menu (de quy cho tien)
-
+	} while (chosen == 2);
+	
+	//choose load file
+	if (chosen == 1) {
+		writeOption("Enter file name: ", numOChoice+1, 13);
 		ifstream f;
 		ofstream f1;
+		string name;
+		getline(cin, name);
+
 		bool flag = 0;
-		switch (chosen1) {
-		case 0: 
-			f.open("save1.sav");
-			if (f.is_open())
-				flag = !(cg->loadGame(f));
-			else
-				flag = 1;
-			break;
-		case 1:
-			f.open("save2.sav");
-			if (f.is_open())
-				flag = !(cg->loadGame(f));
-			else
-				flag = 1;
-			break;
-		case 2:
-			f.open("save3.sav");
-			if (f.is_open())
-				flag = !(cg->loadGame(f));
-			else
-				flag = 1;
-			break;
-		}
+		f.open(name);
+		if (f.is_open())
+			flag = !(cg->loadGame(f));
+		else
+			flag = 1;
+		
 		f.close();
 		
 		
 		if (flag) {
 
 			//select buggy save
-			switch (chosen1) {
-			case 0:
-				f1.open("save1.sav");
-				break;
-			case 1:
-				f1.open("save2.sav");
-				break;
-			case 2:
-				f1.open("save3.sav");
-				break;
-			}
+			f1.open(name);
 
 			setColor(13);
-			writeOption("Something is wrong, starting new game", 5, false);
+			writeOption("Something is wrong, starting new game", numOChoice+1, false);
 			for (int i = 0;i < 3;i++) {
 				cout << '.';
 				Sleep(500);
 			}
-			setColor(15);
+			setColor(BW);
 			cg->resetSave(f1);
 			f1.close();
 			return 0;
 		}
 	}
 	return chosen;
+}
+
+void writeOption(string s, int pos, int color) {
+	setColor(color);
+	int len = s.length();
+	GotoXY(MID_POS - (len - len / 2), 8 + pos * 2);
+	cout << s;
+	setColor(BW);
 }
 
 void writeOption(string s, int pos, bool isChosen) {
@@ -226,13 +258,13 @@ void writeOption(string s, int pos, bool isChosen) {
 	GotoXY(MID_POS - (len - len / 2), 8 + pos*2);
 	cout << s;
 	if (isChosen)
-		setColor(15);
+		setColor(BW);
 }
 
 
 // Xoa man, In ra menu, save neu co, tra ve thu dc chon
 int PauseMenu() {
-	vector<string> selection = { "Resume Game","Save Game slot 1","Save Game slot 2","Save Game slot 3","Exit" };
+	vector<string> selection = { "Resume Game","Save Game","Load Game","Exit" };
 	int chosen = 0;
 	int numOfChoice = selection.size();
 	char key;
@@ -261,46 +293,48 @@ int PauseMenu() {
 
 		bool flag = 0;
 		ofstream f;
-
+		ifstream f1;
+		string name;
 		switch (chosen) {
 		case 1:
-			f.open("save1.sav");
+			writeOption("Enter save file path: ", numOfChoice + 1, 13);
+			getline(cin, name);
+			f.open(name);
 			if (f.is_open())
 				flag = !(cg->saveGame(f));
 			else
 				flag = 1;
 			f.close();
 			break;
-
 		case 2:
-			f.open("save2.sav");
-			if (f.is_open())
-				flag = !(cg->saveGame(f));
+			writeOption("Enter save file path: ", numOfChoice + 1, 13);
+			getline(cin, name);
+			f1.open(name);
+			if (f1.is_open())
+				flag = !(cg->loadGame(f1));
 			else
 				flag = 1;
-			f.close();
-			break;
-
-		case 3:
-			f.open("save3.sav");
-			if (f.is_open())
-				flag = !(cg->saveGame(f));
-			else
-				flag = 1;
-			f.close();
+			f1.close();
 			break;
 		default:
 			cg->clearScr();
 			return chosen;
 		}
 
-		if (chosen <= 3 && chosen >= 1) {
-			setColor(13);
+		if (chosen == 1) {
+			writeOption("                                         ", numOfChoice + 1, BW);
 			if (flag)
-				writeOption("Cannot save game atm.", numOfChoice + 1, false);
+				writeOption("Cannot save game right now.", numOfChoice + 1, 13);
 			else
-				writeOption("Saved successfully.", numOfChoice + 1, false);
-			setColor(15);
+				writeOption("Saved successfully.", numOfChoice + 1, 13);
+			
+		}
+		else {
+			writeOption("                                         ", numOfChoice + 1, BW);
+			if (flag)
+				writeOption("Cannot open save file.", numOfChoice + 1, 13);
+			else
+				writeOption("Loaded successfully.", numOfChoice + 1, 13);			
 		}
 
 	}
